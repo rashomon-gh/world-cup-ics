@@ -154,14 +154,21 @@ export default function App() {
     return keys.map(k => ({ key: k, matches: buckets[k] }));
   }, [visibleMatches, timezone]);
 
+  const exportableMatches = useMemo(() => {
+    const GROUP_GRPS = new Set(['A','B','C','D','E','F','G','H','I','J','K','L']);
+    return visibleMatches.filter(m => GROUP_GRPS.has(m.grp));
+  }, [visibleMatches]);
+
   const handleExportAll = () => {
     const label = selectedTeams.size > 0
       ? [...selectedTeams].join('-').slice(0, 40)
       : 'all-matches';
-    downloadICS(visibleMatches, `wc2026-${label}.ics`);
+    downloadICS(exportableMatches, `wc2026-${label}.ics`);
   };
 
   const handleExportMatch = (match: Match) => {
+    const GROUP_GRPS = new Set(['A','B','C','D','E','F','G','H','I','J','K','L']);
+    if (!GROUP_GRPS.has(match.grp)) return;
     const slug = match.teams.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30);
     downloadICS([match], `wc2026-${slug}.ics`);
   };
@@ -181,8 +188,8 @@ export default function App() {
           <div className="subtitle">104 matches · 11 Jun – 19 Jul · USA / Canada / Mexico</div>
         </div>
         <div className="header-actions">
-          <button className="btn btn-primary" onClick={handleExportAll} disabled={visibleMatches.length === 0}>
-            ⬇ Export {visibleMatches.length} match{visibleMatches.length !== 1 ? 'es' : ''} (.ics)
+          <button className="btn btn-primary" onClick={handleExportAll} disabled={exportableMatches.length === 0}>
+            ⬇ Export {exportableMatches.length} group match{exportableMatches.length !== 1 ? 'es' : ''} (.ics)
           </button>
         </div>
       </header>
@@ -256,12 +263,12 @@ export default function App() {
             <div className="export-summary">
               <p>
                 {selectedTeams.size === 0
-                  ? `Showing all ${visibleMatches.length} matches.`
-                  : `${visibleMatches.length} match${visibleMatches.length !== 1 ? 'es' : ''} for ${selectedTeams.size} team${selectedTeams.size !== 1 ? 's' : ''}.`
+                  ? `${exportableMatches.length} group stage matches available.`
+                  : `${exportableMatches.length} group stage match${exportableMatches.length !== 1 ? 'es' : ''} for ${selectedTeams.size} team${selectedTeams.size !== 1 ? 's' : ''}.`
                 }
-                {' '}Click any match's calendar icon or use the export button above.
+                {' '}Click any group match's 📅 icon or use the export button above.
               </p>
-              <button className="btn btn-primary btn-full" onClick={handleExportAll} disabled={visibleMatches.length === 0}>
+              <button className="btn btn-primary btn-full" onClick={handleExportAll} disabled={exportableMatches.length === 0}>
                 ⬇ Export .ics Calendar
               </button>
             </div>
@@ -308,7 +315,8 @@ export default function App() {
                         <div className="match-export">
                           <button
                             className="btn btn-ghost btn-sm"
-                            title="Export this match to calendar"
+                            title={isGroup ? 'Add to calendar' : 'Knockout fixtures TBD — not exportable'}
+                            disabled={!isGroup}
                             onClick={() => handleExportMatch(m)}
                           >
                             📅
