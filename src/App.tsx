@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { GROUP_MATCHES, KNOCKOUT_MATCHES, ALL_MATCHES, GROUP_STAGE_TEAMS, FLAGS, GROUPS, matchToDate, Match } from './data/matches';
+import { KNOCKOUT_MATCHES, ALL_MATCHES, GROUP_STAGE_TEAMS, FLAGS, GROUPS, matchToDate, Match } from './data/matches';
 import { downloadICS } from './utils/ics';
 
 const TIMEZONES = [
@@ -102,12 +102,12 @@ function getRoundLabel(grp: string): string {
   return labels[grp] ?? `Grp ${grp}`;
 }
 
-type StageFilter = 'all' | 'group' | 'knockout';
+type StageFilter = 'all' | 'knockout';
 
 export default function App() {
   const [timezone, setTimezone] = useState('Europe/Berlin');
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
-  const [stageFilter, setStageFilter] = useState<StageFilter>('all');
+  const [stageFilter, setStageFilter] = useState<StageFilter>('knockout');
   const [teamSearch, setTeamSearch] = useState('');
 
   const toggleTeam = useCallback((team: string) => {
@@ -128,9 +128,7 @@ export default function App() {
   );
 
   const visibleMatches = useMemo(() => {
-    const base = stageFilter === 'group' ? GROUP_MATCHES
-      : stageFilter === 'knockout' ? KNOCKOUT_MATCHES
-      : ALL_MATCHES;
+    const base = stageFilter === 'knockout' ? KNOCKOUT_MATCHES : ALL_MATCHES;
 
     if (selectedTeams.size === 0) return base;
     return base.filter(m => {
@@ -154,10 +152,12 @@ export default function App() {
     return keys.map(k => ({ key: k, matches: buckets[k] }));
   }, [visibleMatches, timezone]);
 
-  const exportableMatches = useMemo(() => {
-    const GROUP_GRPS = new Set(['A','B','C','D','E','F','G','H','I','J','K','L']);
-    return visibleMatches.filter(m => GROUP_GRPS.has(m.grp));
-  }, [visibleMatches]);
+  const EXPORTABLE_GRPS = new Set(['A','B','C','D','E','F','G','H','I','J','K','L','R32']);
+
+  const exportableMatches = useMemo(() =>
+    visibleMatches.filter(m => EXPORTABLE_GRPS.has(m.grp)),
+    [visibleMatches]
+  );
 
   const handleExportAll = () => {
     const label = selectedTeams.size > 0
@@ -167,8 +167,7 @@ export default function App() {
   };
 
   const handleExportMatch = (match: Match) => {
-    const GROUP_GRPS = new Set(['A','B','C','D','E','F','G','H','I','J','K','L']);
-    if (!GROUP_GRPS.has(match.grp)) return;
+    if (!EXPORTABLE_GRPS.has(match.grp)) return;
     const slug = match.teams.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30);
     downloadICS([match], `wc2026-${slug}.ics`);
   };
@@ -189,7 +188,7 @@ export default function App() {
         </div>
         <div className="header-actions">
           <button className="btn btn-primary" onClick={handleExportAll} disabled={exportableMatches.length === 0}>
-            ⬇ Export {exportableMatches.length} group match{exportableMatches.length !== 1 ? 'es' : ''} (.ics)
+            ⬇ Export {exportableMatches.length} match{exportableMatches.length !== 1 ? 'es' : ''} (.ics)
           </button>
         </div>
       </header>
@@ -210,13 +209,13 @@ export default function App() {
           <div className="sidebar-section">
             <h3>Stage</h3>
             <div className="stage-toggle">
-              {(['all','group','knockout'] as StageFilter[]).map(s => (
+              {(['knockout','all'] as StageFilter[]).map(s => (
                 <button
                   key={s}
                   className={stageFilter === s ? 'active' : ''}
                   onClick={() => setStageFilter(s)}
                 >
-                  {s === 'all' ? 'All' : s === 'group' ? 'Group' : 'Knockout'}
+                  {s === 'all' ? 'All (incl. group)' : 'Knockout'}
                 </button>
               ))}
             </div>
@@ -262,11 +261,8 @@ export default function App() {
           <div className="sidebar-section">
             <div className="export-summary">
               <p>
-                {selectedTeams.size === 0
-                  ? `${exportableMatches.length} group stage matches available.`
-                  : `${exportableMatches.length} group stage match${exportableMatches.length !== 1 ? 'es' : ''} for ${selectedTeams.size} team${selectedTeams.size !== 1 ? 's' : ''}.`
-                }
-                {' '}Click any group match's 📅 icon or use the export button above.
+                {exportableMatches.length} match{exportableMatches.length !== 1 ? 'es' : ''} available.
+                {' '}Click any match's 📅 icon or use the export button above.
               </p>
               <button className="btn btn-primary btn-full" onClick={handleExportAll} disabled={exportableMatches.length === 0}>
                 ⬇ Export .ics Calendar
@@ -294,8 +290,9 @@ export default function App() {
                     const d = matchToDate(m);
                     const timeStr = formatTime(d, timezone);
                     const [timePart, period] = timeStr.split(' ');
-                    const isGroup = ['A','B','C','D','E','F','G','H','I','J','K','L'].includes(m.grp);
-                    const isHighlighted = isGroup && m.teams.split(' v ').some(t => selectedTeams.has(t.trim()));
+                    const isGroupMatch = ['A','B','C','D','E','F','G','H','I','J','K','L'].includes(m.grp);
+                    const isExportable = isGroupMatch || m.grp === 'R32';
+                    const isHighlighted = isGroupMatch && m.teams.split(' v ').some(t => selectedTeams.has(t.trim()));
                     return (
                       <div key={i} className={`match-card${isHighlighted ? ' highlighted' : ''}`}>
                         <div className="match-time">
@@ -304,7 +301,7 @@ export default function App() {
                         </div>
                         <div
                           className="match-grp"
-                          style={{ color: isGroup ? getGroupColor(m.grp) : 'var(--accent)' }}
+                          style={{ color: isGroupMatch ? getGroupColor(m.grp) : 'var(--accent)' }}
                         >
                           {getRoundLabel(m.grp)}
                         </div>
@@ -315,8 +312,8 @@ export default function App() {
                         <div className="match-export">
                           <button
                             className="btn btn-ghost btn-sm"
-                            title={isGroup ? 'Add to calendar' : 'Knockout fixtures TBD — not exportable'}
-                            disabled={!isGroup}
+                            title={isExportable ? 'Add to calendar' : 'Fixtures TBD — not exportable yet'}
+                            disabled={!isExportable}
                             onClick={() => handleExportMatch(m)}
                           >
                             📅
