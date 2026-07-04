@@ -152,7 +152,7 @@ export default function App() {
     return keys.map(k => ({ key: k, matches: buckets[k] }));
   }, [visibleMatches, timezone]);
 
-  const EXPORTABLE_GRPS = new Set(['A','B','C','D','E','F','G','H','I','J','K','L','R32']);
+  const EXPORTABLE_GRPS = new Set(['A','B','C','D','E','F','G','H','I','J','K','L','R32','R16']);
 
   const exportableMatches = useMemo(() =>
     visibleMatches.filter(m => EXPORTABLE_GRPS.has(m.grp)),
