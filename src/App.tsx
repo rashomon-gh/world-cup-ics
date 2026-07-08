@@ -127,9 +127,11 @@ export default function App() {
     [teamSearch]
   );
 
+  const VISIBLE_GRPS = new Set(['QF','SF','3rd','F']);
+
   const visibleMatches = useMemo(() => {
     const base = (stageFilter === 'knockout' ? KNOCKOUT_MATCHES : ALL_MATCHES)
-      .filter(m => m.grp !== 'R16');
+      .filter(m => VISIBLE_GRPS.has(m.grp));
 
     if (selectedTeams.size === 0) return base;
     return base.filter(m => {
