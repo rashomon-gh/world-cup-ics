@@ -123,10 +123,10 @@ export const KNOCKOUT_MATCHES: Match[] = [
   { grp:'R16', num:'M95', utc:16,   date:'2026-07-07', teams:'Argentina v Egypt',       venue:'Atlanta'       },
   { grp:'R16', num:'M96', utc:20,   date:'2026-07-07', teams:'Switzerland v Colombia',  venue:'Vancouver'     },
   // Quarter-finals
-  { grp:'QF',  num:'M97', utc:20,   date:'2026-07-09', teams:'Win M89 v Win M90',       venue:'Boston'        },
-  { grp:'QF',  num:'M98', utc:19,   date:'2026-07-10', teams:'Win M93 v Win M94',       venue:'Los Angeles'   },
-  { grp:'QF',  num:'M99', utc:21,   date:'2026-07-11', teams:'Win M91 v Win M92',       venue:'Miami'         },
-  { grp:'QF',  num:'M100',utc:1,    date:'2026-07-12', teams:'Win M95 v Win M96',       venue:'Kansas City'   },
+  { grp:'QF',  num:'M97', utc:20,   date:'2026-07-09', teams:'France v Morocco',        venue:'Boston'        },
+  { grp:'QF',  num:'M98', utc:19,   date:'2026-07-10', teams:'Spain v Belgium',         venue:'Los Angeles'   },
+  { grp:'QF',  num:'M99', utc:21,   date:'2026-07-11', teams:'Norway v England',        venue:'Miami'         },
+  { grp:'QF',  num:'M100',utc:1,    date:'2026-07-12', teams:'Argentina v Switzerland', venue:'Kansas City'   },
   // Semi-finals
   { grp:'SF',  num:'M101',utc:19,   date:'2026-07-14', teams:'Win M97 v Win M98',       venue:'Dallas'        },
   { grp:'SF',  num:'M102',utc:19,   date:'2026-07-15', teams:'Win M99 v Win M100',      venue:'Atlanta'       },
