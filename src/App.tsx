@@ -128,7 +128,8 @@ export default function App() {
   );
 
   const visibleMatches = useMemo(() => {
-    const base = stageFilter === 'knockout' ? KNOCKOUT_MATCHES : ALL_MATCHES;
+    const base = (stageFilter === 'knockout' ? KNOCKOUT_MATCHES : ALL_MATCHES)
+      .filter(m => m.grp !== 'R16');
 
     if (selectedTeams.size === 0) return base;
     return base.filter(m => {
@@ -152,7 +153,7 @@ export default function App() {
     return keys.map(k => ({ key: k, matches: buckets[k] }));
   }, [visibleMatches, timezone]);
 
-  const EXPORTABLE_GRPS = new Set(['A','B','C','D','E','F','G','H','I','J','K','L','R32','QF']);
+  const EXPORTABLE_GRPS = new Set(['QF']);
 
   const exportableMatches = useMemo(() =>
     visibleMatches.filter(m => EXPORTABLE_GRPS.has(m.grp)),
@@ -291,7 +292,7 @@ export default function App() {
                     const timeStr = formatTime(d, timezone);
                     const [timePart, period] = timeStr.split(' ');
                     const isGroupMatch = ['A','B','C','D','E','F','G','H','I','J','K','L'].includes(m.grp);
-                    const isExportable = isGroupMatch || m.grp === 'R32' || m.grp === 'QF';
+                    const isExportable = m.grp === 'QF';
                     const isHighlighted = isGroupMatch && m.teams.split(' v ').some(t => selectedTeams.has(t.trim()));
                     return (
                       <div key={i} className={`match-card${isHighlighted ? ' highlighted' : ''}`}>
