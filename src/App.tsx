@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { ALL_MATCHES, GROUP_STAGE_TEAMS, FLAGS, GROUPS, matchToDate, Match } from './data/matches';
+import { KNOCKOUT_MATCHES, GROUP_STAGE_TEAMS, FLAGS, GROUPS, matchToDate, Match } from './data/matches';
 import { downloadICS } from './utils/ics';
 
 const KNOCKOUT_LABELS_API_URL = 'https://world-cup-ics-server.ahad-0b7.workers.dev/';
@@ -172,7 +172,7 @@ export default function App() {
   );
 
   const matches = useMemo(
-    () => applyKnockoutLabels(ALL_MATCHES, knockoutLabels),
+    () => applyKnockoutLabels(KNOCKOUT_MATCHES, knockoutLabels),
     [knockoutLabels]
   );
 
