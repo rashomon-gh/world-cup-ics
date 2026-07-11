@@ -128,11 +128,11 @@ export default function App() {
   const [knockoutLabels, setKnockoutLabels] = useState<KnockoutLabelMap>({});
 
   useEffect(() => {
-    const { signal, abort } = new AbortController();
+    const controller = new AbortController();
 
     async function loadKnockoutLabels() {
       try {
-        const response = await fetch(KNOCKOUT_LABELS_API_URL, { signal, cache: 'no-cache' });
+        const response = await fetch(KNOCKOUT_LABELS_API_URL, { signal: controller.signal, cache: 'no-cache' });
         if (!response.ok) return;
 
         const data: unknown = await response.json();
@@ -151,7 +151,7 @@ export default function App() {
     }
 
     loadKnockoutLabels();
-    return () => abort();
+    return () => controller.abort();
   }, []);
 
   const toggleTeam = useCallback((team: string) => {
