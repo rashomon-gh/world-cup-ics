@@ -1,6 +1,10 @@
-import { useState, useMemo, useCallback } from 'react';
-import { KNOCKOUT_MATCHES, ALL_MATCHES, GROUP_STAGE_TEAMS, FLAGS, GROUPS, matchToDate, Match } from './data/matches';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { ALL_MATCHES, GROUP_STAGE_TEAMS, FLAGS, GROUPS, matchToDate, Match } from './data/matches';
 import { downloadICS } from './utils/ics';
+
+const KNOCKOUT_LABELS_API_URL = 'https://world-cup-ics-server.ahad-0b7.workers.dev/';
+
+type KnockoutLabelMap = Partial<Record<string, string>>;
 
 const TIMEZONES = [
   { label: 'Auckland (NZST, UTC+12)', iana: 'Pacific/Auckland' },
@@ -102,6 +106,18 @@ function getRoundLabel(grp: string): string {
   return labels[grp] ?? `Grp ${grp}`;
 }
 
+function applyKnockoutLabels(matches: Match[], labels: KnockoutLabelMap): Match[] {
+  if (Object.keys(labels).length === 0) return matches;
+
+  return matches.map(match => {
+    if (!match.num) return match;
+    const updatedTeams = labels[match.num];
+    return updatedTeams && updatedTeams !== match.teams
+      ? { ...match, teams: updatedTeams }
+      : match;
+  });
+}
+
 type StageFilter = 'all' | 'knockout';
 
 export default function App() {
@@ -109,6 +125,34 @@ export default function App() {
   const [selectedTeams, setSelectedTeams] = useState<Set<string>>(new Set());
   const [stageFilter, setStageFilter] = useState<StageFilter>('knockout');
   const [teamSearch, setTeamSearch] = useState('');
+  const [knockoutLabels, setKnockoutLabels] = useState<KnockoutLabelMap>({});
+
+  useEffect(() => {
+    const { signal, abort } = new AbortController();
+
+    async function loadKnockoutLabels() {
+      try {
+        const response = await fetch(KNOCKOUT_LABELS_API_URL, { signal, cache: 'no-cache' });
+        if (!response.ok) return;
+
+        const data: unknown = await response.json();
+        if (!data || typeof data !== 'object' || Array.isArray(data)) return;
+
+        const nextLabels: KnockoutLabelMap = {};
+        for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+          if (typeof value === 'string') nextLabels[key] = value;
+        }
+        setKnockoutLabels(nextLabels);
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          console.error('Failed to load knockout labels from API', error);
+        }
+      }
+    }
+
+    loadKnockoutLabels();
+    return () => abort();
+  }, []);
 
   const toggleTeam = useCallback((team: string) => {
     setSelectedTeams(prev => {
@@ -127,10 +171,15 @@ export default function App() {
     [teamSearch]
   );
 
+  const matches = useMemo(
+    () => applyKnockoutLabels(ALL_MATCHES, knockoutLabels),
+    [knockoutLabels]
+  );
+
   const VISIBLE_GRPS = new Set(['QF','SF','3rd','F']);
 
   const visibleMatches = useMemo(() => {
-    const base = (stageFilter === 'knockout' ? KNOCKOUT_MATCHES : ALL_MATCHES)
+    const base = matches
       .filter(m => VISIBLE_GRPS.has(m.grp));
 
     if (selectedTeams.size === 0) return base;
@@ -139,7 +188,7 @@ export default function App() {
       const parts = m.teams.split(' v ').map(s => s.trim());
       return parts.some(t => selectedTeams.has(t));
     });
-  }, [stageFilter, selectedTeams]);
+  }, [stageFilter, selectedTeams, matches]);
 
   const groupedByDay = useMemo(() => {
     const buckets: Record<string, Match[]> = {};
