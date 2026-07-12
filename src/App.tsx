@@ -118,6 +118,12 @@ function applyKnockoutLabels(matches: Match[], labels: KnockoutLabelMap): Match[
   });
 }
 
+function isMatchExportable(match: Match): boolean {
+  const teams = match.teams.split(' v ').map(team => team.trim());
+  if (teams.length !== 2) return false;
+  return teams.every(team => Boolean(FLAGS[team]));
+}
+
 type StageFilter = 'all' | 'knockout';
 
 export default function App() {
@@ -204,10 +210,8 @@ export default function App() {
     return keys.map(k => ({ key: k, matches: buckets[k] }));
   }, [visibleMatches, timezone]);
 
-  const EXPORTABLE_GRPS = new Set(['QF']);
-
   const exportableMatches = useMemo(() =>
-    visibleMatches.filter(m => EXPORTABLE_GRPS.has(m.grp)),
+    visibleMatches.filter(isMatchExportable),
     [visibleMatches]
   );
 
@@ -219,7 +223,7 @@ export default function App() {
   };
 
   const handleExportMatch = (match: Match) => {
-    if (!EXPORTABLE_GRPS.has(match.grp)) return;
+    if (!isMatchExportable(match)) return;
     const slug = match.teams.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30);
     downloadICS([match], `wc2026-${slug}.ics`);
   };
@@ -343,7 +347,7 @@ export default function App() {
                     const timeStr = formatTime(d, timezone);
                     const [timePart, period] = timeStr.split(' ');
                     const isGroupMatch = ['A','B','C','D','E','F','G','H','I','J','K','L'].includes(m.grp);
-                    const isExportable = m.grp === 'QF';
+                    const isExportable = isMatchExportable(m);
                     const isHighlighted = isGroupMatch && m.teams.split(' v ').some(t => selectedTeams.has(t.trim()));
                     return (
                       <div key={i} className={`match-card${isHighlighted ? ' highlighted' : ''}`}>
